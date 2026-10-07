@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Piscinas Naturales y de Marea del Mundo</title>
+    
+    <!-- CSS Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #f4f7f6;
+        }
+
+        header {
+            background-color: #0277bd;
+            color: white;
+            padding: 15px 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        #container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        #sidebar {
+            width: 320px;
+            background: white;
+            border-right: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+            z-index: 500;
+        }
+
+        .filter-section {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .filter-section label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .filter-section select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        #pool-list {
+            flex: 1;
+            overflow-y: auto;
+            list-style: none;
+        }
+
+        .pool-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .pool-item:hover {
+            background-color: #e1f5fe;
+        }
+
+        .pool-item h3 {
+            font-size: 1rem;
+            color: #0277bd;
+            margin-bottom: 4px;
+        }
+
+        .pool-item p {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        #map {
+            flex: 1;
+            height: 100%;
+        }
+
+        .leaflet-popup-content h3 {
+            color: #0277bd;
+            margin-bottom: 6px;
+        }
+
+        .leaflet-popup-content p {
+            margin: 3px 0;
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 768px) {
+            #container {
+                flex-direction: column-reverse;
+            }
+            #sidebar {
+                width: 100%;
+                height: 40%;
+            }
+            #map {
+                height: 60%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🏊‍♂️ Explorador de Piscinas Naturales y de Marea</h1>
+        <p>Visualización interactiva geoespacial de piscinas marinas</p>
+    </header>
+
+    <div id="container">
+        <div id="sidebar">
+            <div class="filter-section">
+                <label for="country-filter">Filtrar por País:</label>
+                <select id="country-filter">
+                    <option value="ALL">Todos los países</option>
+                    <option value="ESP">España (ESP)</option>
+                    <option value="GBR">Reino Unido (GBR)</option>
+                    <option value="AUS">Australia (AUS)</option>
+                    <option value="ZAF">Sudáfrica (ZAF)</option>
+                    <option value="FRA">Francia (FRA)</option>
+                    <option value="GGY">Guernsey (GGY)</option>
+                    <option value="JEY">Jersey (JEY)</option>
+                    <option value="MLT">Malta (MLT)</option>
+                    <option value="USA">Estados Unidos (USA)</option>
+                </select>
+            </div>
+            <ul id="pool-list"></ul>
+        </div>
+        <div id="map"></div>
+    </div>
+
+    <!-- JS Leaflet -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // Datos geoespaciales de las piscinas naturales
+        const poolsData = [
+            { name: "Piscina Natural Punta del Hidalgo", country: "ESP", countryName: "España", lat: 28.5683, lng: -16.3312, size: "3,808 m²", tide: "2.33 m", coast: "Rocoso" },
+            { name: "Piscinas Naturales 'El Caletón'", country: "ESP", countryName: "España", lat: 28.3725, lng: -16.7172, size: "1,520 m²", tide: "2.33 m", coast: "Rocoso" },
+            { name: "Charco de San Lorenzo", country: "ESP", countryName: "España", lat: 28.1561, lng: -15.6314, size: "2,450 m²", tide: "2.20 m", coast: "Rocoso" },
+            { name: "Agaete Piscina Natural", country: "ESP", countryName: "España", lat: 28.1017, lng: -15.7081, size: "3,100 m²", tide: "2.20 m", coast: "Rocoso" },
+            { name: "Piscinas de La Laja", country: "ESP", countryName: "España", lat: 28.0789, lng: -15.4144, size: "146,105 m²", tide: "2.20 m", coast: "Mixto" },
+            { name: "Charco del Conde", country: "ESP", countryName: "España", lat: 28.0872, lng: -17.3375, size: "4,200 m²", tide: "2.10 m", coast: "Rocoso" },
+            { name: "Pozo de las Calcosas", country: "ESP", countryName: "España", lat: 27.8386, lng: -17.9258, size: "980 m²", tide: "2.00 m", coast: "Rocoso" },
+
+            { name: "Bude Sea Pool", country: "GBR", countryName: "Reino Unido", lat: 50.8342, lng: -4.5528, size: "4,500 m²", tide: "8.50 m", coast: "Arenoso/Rocoso" },
+            { name: "Walpole Tidal Pool", country: "GBR", countryName: "Reino Unido", lat: 51.3931, lng: 1.3986, size: "16,000 m²", tide: "4.80 m", coast: "Artificial/Arenoso" },
+            { name: "Clevedon Marine Lake", country: "GBR", countryName: "Reino Unido", lat: 51.4394, lng: -2.8611, size: "15,000 m²", tide: "11.20 m", coast: "Artificial" },
+            { name: "St Monans Tidal Pool", country: "GBR", countryName: "Reino Unido", lat: 56.2043, lng: -2.7561, size: "850 m²", tide: "4.50 m", coast: "Rocoso" },
+            { name: "The Trinkie", country: "GBR", countryName: "Reino Unido", lat: 58.4211, lng: -3.0722, size: "620 m²", tide: "3.20 m", coast: "Rocoso" },
+            { name: "Portsoy Outdoor Pool", country: "GBR", countryName: "Reino Unido", lat: 57.6853, lng: -2.6914, size: "750 m²", tide: "3.80 m", coast: "Rocoso" },
+
+            { name: "Bondi Icebergs Pool", country: "AUS", countryName: "Australia", lat: -33.8951, lng: 151.2743, size: "1,200 m²", tide: "1.60 m", coast: "Rocoso/Artificial" },
+            { name: "Newcastle Ocean Baths", country: "AUS", countryName: "Australia", lat: -32.9298, lng: 151.7891, size: "4,800 m²", tide: "1.50 m", coast: "Artificial" },
+            { name: "Merewether Ocean Baths", country: "AUS", countryName: "Australia", lat: -32.9442, lng: 151.7589, size: "5,200 m²", tide: "1.50 m", coast: "Rocoso" },
+            { name: "Wylie's Baths", country: "AUS", countryName: "Australia", lat: -33.9221, lng: 151.2584, size: "1,100 m²", tide: "1.60 m", coast: "Rocoso" },
+
+            { name: "Camps Bay Tidal Pool", country: "ZAF", countryName: "Sudáfrica", lat: -33.9514, lng: 18.3758, size: "1,800 m²", tide: "1.80 m", coast: "Arenoso/Rocoso" },
+            { name: "St James Tidal Pool", country: "ZAF", countryName: "Sudáfrica", lat: -34.1189, lng: 18.4556, size: "950 m²", tide: "1.70 m", coast: "Rocoso" },
+            { name: "Monwabisi Tidal Pool", country: "ZAF", countryName: "Sudáfrica", lat: -34.0803, lng: 18.6601, size: "31,891 m²", tide: "1.70 m", coast: "Arenoso" },
+
+            { name: "Piscine de mer Dinard", country: "FRA", countryName: "Francia", lat: 48.6361, lng: -2.0544, size: "2,100 m²", tide: "11.10 m", coast: "Arenoso" },
+            { name: "La Vallette Pools", country: "GGY", countryName: "Guernsey", lat: 49.4497, lng: -2.5322, size: "3,200 m²", tide: "8.90 m", coast: "Rocoso" },
+            { name: "Havre Des Pas Bathing Pool", country: "JEY", countryName: "Jersey", lat: 49.1764, lng: -2.0981, size: "4,100 m²", tide: "10.20 m", coast: "Arenoso" },
+            { name: "Fond Għadir", country: "MLT", countryName: "Malta", lat: 35.9142, lng: 14.5089, size: "450 m²", tide: "0.24 m", coast: "Rocoso" },
+            { name: "Waikiki War Memorial Natatorium", country: "USA", countryName: "Estados Unidos", lat: 21.2644, lng: -157.8219, size: "3,500 m²", tide: "0.60 m", coast: "Artificial" }
+        ];
+
+        // Inicializar el mapa centrado globalmente
+        const map = L.map('map').setView([20, 0], 2);
+
+        // Añadir capa de mapa base (OpenStreetMap)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        let markers = [];
+
+        // Función para renderizar marcadores y lista
+        function renderPools(filterCountry = "ALL") {
+            // Limpiar marcadores anteriores
+            markers.forEach(m => map.removeLayer(m));
+            markers = [];
+
+            const listContainer = document.getElementById('pool-list');
+            listContainer.innerHTML = "";
+
+            const filteredPools = filterCountry === "ALL" 
+                ? poolsData 
+                : poolsData.filter(p => p.country === filterCountry);
+
+            filteredPools.forEach(pool => {
+                // Crear marcador
+                const marker = L.marker([pool.lat, pool.lng]).addTo(map);
+                marker.bindPopup(`
+                    <h3>${pool.name}</h3>
+                    <p><strong>País:</strong> ${pool.countryName}</p>
+                    <p><strong>Superficie:</strong> ${pool.size}</p>
+                    <p><strong>Rango Marea:</strong> ${pool.tide}</p>
+                    <p><strong>Sustrato:</strong> ${pool.coast}</p>
+                `);
+                markers.push(marker);
+
+                // Crear elemento en la lista lateral
+                const li = document.createElement('li');
+                li.className = 'pool-item';
+                li.innerHTML = `
+                    <h3>${pool.name}</h3>
+                    <p>${pool.countryName} | ${pool.size}</p>
+                `;
+                li.onclick = () => {
+                    map.setView([pool.lat, pool.lng], 13);
+                    marker.openPopup();
+                };
+                listContainer.appendChild(li);
+            });
+
+            // Ajustar vista del mapa si hay resultados
+            if (filteredPools.length > 0 && filterCountry !== "ALL") {
+                const group = new L.featureGroup(markers);
+                map.fitBounds(group.getBounds().pad(0.2));
+            } else if (filterCountry === "ALL") {
+                map.setView([20, 0], 2);
+            }
+        }
+
+        // Evento de filtro
+        document.getElementById('country-filter').addEventListener('change', (e) => {
+            renderPools(e.target.value);
+        });
+
+        // Carga inicial
+        renderPools();
+    </script>
+</body>
+</html>
