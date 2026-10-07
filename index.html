@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Piscinas Naturales y de Marea del Mundo</title>
+    <title>Piscinas Naturales y de Marea</title>
     
-    <!-- CSS Leaflet -->
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
@@ -20,20 +20,20 @@
             display: flex;
             flex-direction: column;
             height: 100vh;
-            background-color: #f4f7f6;
+            background-color: #121212;
+            color: #ffffff;
         }
 
         header {
-            background-color: #0277bd;
-            color: white;
+            background-color: #1f2937;
             padding: 15px 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
             z-index: 1000;
         }
 
         header h1 {
-            font-size: 1.5rem;
-            margin-bottom: 5px;
+            font-size: 1.4rem;
+            color: #38bdf8;
         }
 
         #container {
@@ -43,9 +43,9 @@
         }
 
         #sidebar {
-            width: 320px;
-            background: white;
-            border-right: 1px solid #ddd;
+            width: 340px;
+            background: #1e293b;
+            border-right: 1px solid #334155;
             display: flex;
             flex-direction: column;
             z-index: 500;
@@ -53,20 +53,22 @@
 
         .filter-section {
             padding: 15px;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid #334155;
         }
 
         .filter-section label {
             font-weight: bold;
             display: block;
             margin-bottom: 5px;
-            color: #333;
+            color: #94a3b8;
         }
 
         .filter-section select {
             width: 100%;
             padding: 8px;
-            border: 1px solid #ccc;
+            border: 1px solid #475569;
+            background: #0f172a;
+            color: #fff;
             border-radius: 4px;
         }
 
@@ -78,24 +80,24 @@
 
         .pool-item {
             padding: 12px 15px;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid #334155;
             cursor: pointer;
             transition: background 0.2s;
         }
 
         .pool-item:hover {
-            background-color: #e1f5fe;
+            background-color: #334155;
         }
 
         .pool-item h3 {
-            font-size: 1rem;
-            color: #0277bd;
+            font-size: 0.95rem;
+            color: #38bdf8;
             margin-bottom: 4px;
         }
 
         .pool-item p {
-            font-size: 0.85rem;
-            color: #666;
+            font-size: 0.8rem;
+            color: #94a3b8;
         }
 
         #map {
@@ -103,24 +105,101 @@
             height: 100%;
         }
 
+        /* Estilos Popup y Valoraciones */
+        .leaflet-popup-content-wrapper {
+            background: #1e293b;
+            color: #f8fafc;
+            border-radius: 8px;
+        }
+
+        .leaflet-popup-tip {
+            background: #1e293b;
+        }
+
+        .popup-title {
+            color: #38bdf8;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+        }
+
+        .popup-info {
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .reviews-section {
+            border-top: 1px solid #334155;
+            padding-top: 8px;
+            margin-top: 8px;
+        }
+
+        .reviews-title {
+            font-weight: bold;
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+            color: #f1f5f9;
+        }
+
+        .review-list {
+            max-height: 100px;
+            overflow-y: auto;
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+        }
+
+        .review-item {
+            background: #0f172a;
+            padding: 5px 8px;
+            border-radius: 4px;
+            margin-bottom: 4px;
+        }
+
+        .star-rating {
+            color: #f59e0b;
+        }
+
+        .review-form label {
+            font-size: 0.75rem;
+            display: block;
+            margin-top: 4px;
+        }
+
+        .review-form select, .review-form textarea, .review-form button {
+            width: 100%;
+            margin-top: 4px;
+            background: #0f172a;
+            color: white;
+            border: 1px solid #475569;
+            border-radius: 4px;
+            padding: 4px;
+            font-size: 0.8rem;
+        }
+
+        .review-form button {
+            background: #0284c7;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            padding: 6px;
+            margin-top: 6px;
+        }
+
+        .review-form button:hover {
+            background: #0369a1;
+        }
+
         @media (max-width: 768px) {
-            #container {
-                flex-direction: column-reverse;
-            }
-            #sidebar {
-                width: 100%;
-                height: 40%;
-            }
-            #map {
-                height: 60%;
-            }
+            #container { flex-direction: column-reverse; }
+            #sidebar { width: 100%; height: 40%; }
+            #map { height: 60%; }
         }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>🏊‍♂️ Explorador de Piscinas Naturales y de Marea</h1>
+        <h1>🌊 Piscinas de Marea (Vista Satélite)</h1>
     </header>
 
     <div id="container">
@@ -136,27 +215,38 @@
         <div id="map"></div>
     </div>
 
-    <!-- JS Leaflet -->
+    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        // Inicializar mapa
+        // 1. Inicializar mapa
         const map = L.map('map').setView([20, 0], 2);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        // 2. Basemap Satelital (Esri World Imagery)
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             maxZoom: 18,
-            attribution: '© OpenStreetMap'
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
         }).addTo(map);
 
         let geojsonLayer;
         let allFeatures = [];
 
-        // Cargar el archivo GeoJSON externo
+        // 3. Obtener comentarios guardados en el navegador
+        function getSavedReviews(poolId) {
+            const data = localStorage.getItem('pool_reviews_' + poolId);
+            return data ? JSON.parse(data) : [];
+        }
+
+        function saveReview(poolId, rating, comment) {
+            const reviews = getSavedReviews(poolId);
+            reviews.push({ rating: parseInt(rating), comment: comment, date: new Date().toLocaleDateString() });
+            localStorage.setItem('pool_reviews_' + poolId, JSON.stringify(reviews));
+        }
+
+        // 4. Cargar GeoJSON
         fetch('piscinas.geojson')
             .then(response => {
-                if (!response.ok) {
-                    throw new Error("No se pudo cargar el archivo GeoJSON");
-                }
+                if (!response.ok) throw new Error("No se pudo cargar el archivo piscinas.geojson");
                 return response.json();
             })
             .then(data => {
@@ -166,7 +256,6 @@
             })
             .catch(error => console.error('Error cargando el GeoJSON:', error));
 
-        // Rellenar dinámicamente el selector de países
         function populateCountryFilter(features) {
             const select = document.getElementById('country-filter');
             const countries = new Set();
@@ -184,65 +273,35 @@
             });
         }
 
-        // Renderizar capas y lista según el filtro
-        function renderGeoJSON(selectedCountry) {
-            if (geojsonLayer) {
-                map.removeLayer(geojsonLayer);
+        function buildPopupContent(feature) {
+            const p = feature.properties;
+            // Solo dejamos el nombre que viene en la propiedad
+            const name = p.NAME || p.name || p.NOMBRE || "Sin Nombre";
+            const poolId = encodeURIComponent(name);
+            const size = p.SIZE || p.size || "N/A";
+            const tide = p.TIDE || p.tide || "N/A";
+
+            const reviews = getSavedReviews(poolId);
+            let reviewsHtml = '';
+            
+            if (reviews.length === 0) {
+                reviewsHtml = '<p style="color:#94a3b8;">Sin valoraciones aún.</p>';
+            } else {
+                reviewsHtml = reviews.map(r => `
+                    <div class="review-item">
+                        <span class="star-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
+                        <p>${r.comment}</p>
+                    </div>
+                `).join('');
             }
 
-            const listContainer = document.getElementById('pool-list');
-            listContainer.innerHTML = '';
-
-            const filteredData = {
-                type: "FeatureCollection",
-                features: selectedCountry === "ALL" 
-                    ? allFeatures 
-                    : allFeatures.filter(f => (f.properties.CNTR_CODE || f.properties.country || f.properties.PAIS) === selectedCountry)
-            };
-
-            geojsonLayer = L.geoJSON(filteredData, {
-                onEachFeature: function (feature, layer) {
-                    const p = feature.properties;
-                    const name = p.NAME || p.name || p.NOMBRE || "Piscina Natural";
-                    const size = p.SIZE || p.size || "N/A";
-                    const tide = p.TIDE || p.tide || "N/A";
-                    const coast = p.COASTSP || p.coast || "N/A";
-
-                    // Popup en el mapa
-                    layer.bindPopup(`
-                        <strong style="color:#0277bd; font-size:1.1em;">${name}</strong><br>
-                        <b>Superficie:</b> ${size}<br>
-                        <b>Marea:</b> ${tide}<br>
-                        <b>Sustrato:</b> ${coast}
-                    `);
-
-                    // Item en la lista lateral
-                    const li = document.createElement('li');
-                    li.className = 'pool-item';
-                    li.innerHTML = `<h3>${name}</h3><p>Superficie: ${size}</p>`;
-                    li.onclick = () => {
-                        if (layer.getBounds) {
-                            map.fitBounds(layer.getBounds());
-                        } else if (layer.getLatLng) {
-                            map.setView(layer.getLatLng(), 14);
-                        }
-                        layer.openPopup();
-                    };
-                    listContainer.appendChild(li);
-                }
-            }).addTo(map);
-
-            if (filteredData.features.length > 0 && selectedCountry !== "ALL") {
-                map.fitBounds(geojsonLayer.getBounds().pad(0.2));
-            } else if (selectedCountry === "ALL" && allFeatures.length > 0) {
-                map.setView([20, 0], 2);
-            }
-        }
-
-        // Listener para el filtro
-        document.getElementById('country-filter').addEventListener('change', (e) => {
-            renderGeoJSON(e.target.value);
-        });
-    </script>
-</body>
-</html>
+            return `
+                <div class="popup-title">${name}</div>
+                <div class="popup-info">
+                    <b>Superficie:</b> ${size}<br>
+                    <b>Marea:</b> ${tide}
+                </div>
+                <div class="reviews-section">
+                    <div class="reviews-title">Valoraciones y Comentarios:</div>
+                    <div class="review-list" id="reviews-${poolId}">
+                        ${reviewsHtml}
