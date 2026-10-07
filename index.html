@@ -305,3 +305,84 @@
                     <div class="reviews-title">Valoraciones y Comentarios:</div>
                     <div class="review-list" id="reviews-${poolId}">
                         ${reviewsHtml}
+                    </div>
+                    <form class="review-form" onsubmit="submitReview(event, '${poolId}')">
+                        <label>Puntuación:</label>
+                        <select id="rating-${poolId}">
+                            <option value="5">★★★★★ (5)</option>
+                            <option value="4">★★★★☆ (4)</option>
+                            <option value="3">★★★☆☆ (3)</option>
+                            <option value="2">★★☆☆☆ (2)</option>
+                            <option value="1">★☆☆☆☆ (1)</option>
+                        </select>
+                        <textarea id="comment-${poolId}" rows="2" placeholder="Escribe un comentario..." required></textarea>
+                        <button type="submit">Enviar Valoración</button>
+                    </form>
+                </div>
+            `;
+        }
+
+        window.submitReview = function(event, poolId) {
+            event.preventDefault();
+            const rating = document.getElementById(`rating-${poolId}`).value;
+            const comment = document.getElementById(`comment-${poolId}`).value;
+
+            saveReview(poolId, rating, comment);
+            alert("¡Valoración guardada correctamente!");
+            
+            // Refrescar mapa para actualizar vista de popups
+            const currentFilter = document.getElementById('country-filter').value;
+            renderGeoJSON(currentFilter);
+        };
+
+        function renderGeoJSON(selectedCountry) {
+            if (geojsonLayer) {
+                map.removeLayer(geojsonLayer);
+            }
+
+            const listContainer = document.getElementById('pool-list');
+            listContainer.innerHTML = '';
+
+            const filteredData = {
+                type: "FeatureCollection",
+                features: selectedCountry === "ALL" 
+                    ? allFeatures 
+                    : allFeatures.filter(f => (f.properties.CNTR_CODE || f.properties.country || f.properties.PAIS) === selectedCountry)
+            };
+
+            geojsonLayer = L.geoJSON(filteredData, {
+                onEachFeature: function (feature, layer) {
+                    const p = feature.properties;
+                    const name = p.NAME || p.name || p.NOMBRE || "Sin Nombre";
+
+                    layer.bindPopup(() => buildPopupContent(feature), { maxWidth: 280 });
+
+                    // Ítem lateral (solamente nombre y superficie/país)
+                    const li = document.createElement('li');
+                    li.className = 'pool-item';
+                    li.innerHTML = `<h3>${name}</h3><p>${p.CNTR_CODE || ''}</p>`;
+                    li.onclick = () => {
+                        if (layer.getBounds) {
+                            map.fitBounds(layer.getBounds());
+                        } else if (layer.getLatLng) {
+                            map.setView(layer.getLatLng(), 15);
+                        }
+                        layer.openPopup();
+                    };
+                    listContainer.appendChild(li);
+                }
+            }).addTo(map);
+
+            if (filteredData.features.length > 0 && selectedCountry !== "ALL") {
+                map.fitBounds(geojsonLayer.getBounds().pad(0.2));
+            } else if (selectedCountry === "ALL" && allFeatures.length > 0) {
+                map.setView([20, 0], 2);
+            }
+        }
+
+        document.getElementById('country-filter').addEventListener('change', (e) => {
+            renderGeoJSON(e.target.value);
+        });
+    </script>
+</body>
+</html>
